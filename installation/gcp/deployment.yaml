@@ -1,0 +1,130 @@
+resources:
+- name: hydragen-internal-network
+  type: compute.v1.networks
+  properties:
+    autoCreateSubnetworks: false
+- name: hydragen-europe-north-subnetwork
+  type: compute.v1.subnetworks
+  properties:
+    ipCidrRange: 172.16.0.0/28
+    privateIpGoogleAccess: false
+    enableFlowLogs: false
+    network: $(ref.hydragen-internal-network.selfLink)
+    region: europe-north1
+- name: hydragen-firewall-rules-for-k8s-api
+  type: compute.v1.firewall
+  properties:
+      network: $(ref.hydragen-internal-network.selfLink)
+      allowed:
+      - IPProtocol: tcp
+        ports: 
+        - "6443"
+        direction: INGRESS
+        priority: 0
+        sourceRanges: ["0.0.0.0/0"]
+- name: hydragen-firewall-rules-for-ssh
+  type: compute.v1.firewall
+  properties:
+      network: $(ref.hydragen-internal-network.selfLink)
+      allowed:
+      - IPProtocol: tcp
+        ports: 
+        - "22"
+        direction: INGRESS
+        priority: 0
+        sourceRanges: ["0.0.0.0/0"]
+- name: hydragen-firewall-rules-for-prometheus
+  type: compute.v1.firewall
+  properties:
+      network: $(ref.hydragen-internal-network.selfLink)
+      allowed:
+      - IPProtocol: tcp
+        ports: 
+        - "30090"
+        - "30091"
+        direction: INGRESS
+        priority: 0
+        sourceRanges: ["0.0.0.0/0"]
+- name: hydragen-firewall-rules-for-cilium
+  type: compute.v1.firewall
+  properties:
+      network: $(ref.hydragen-internal-network.selfLink)
+      allowed:
+      - IPProtocol: udp
+        ports: 
+        - "8472"
+        direction: INGRESS
+        priority: 0
+        sourceRanges: ["172.16.0.0/28"]
+- type: compute.v1.instance
+  name: hydragen-k8s-master
+  properties:
+    zone: europe-north1-a
+    machineType: zones/europe-north1-a/machineTypes/e2-standard-8
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        sourceImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-2004-lts
+    networkInterfaces:
+    - network: $(ref.hydragen-internal-network.selfLink)
+      subnetwork: $(ref.hydragen-europe-north-subnetwork.selfLink)
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT
+- type: compute.v1.instance
+  name: hydragen-k8s-worker-1
+  properties:
+    zone: europe-north1-a
+    machineType: zones/europe-north1-a/machineTypes/e2-standard-8
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        sourceImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-2004-lts
+    networkInterfaces:
+    - network: $(ref.hydragen-internal-network.selfLink)
+      subnetwork: $(ref.hydragen-europe-north-subnetwork.selfLink)
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT
+- type: compute.v1.instance
+  name: hydragen-k8s-worker-2
+  properties:
+    zone: europe-north1-a
+    machineType: zones/europe-north1-a/machineTypes/e2-standard-8
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        sourceImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-2004-lts
+    networkInterfaces:
+    - network: $(ref.hydragen-internal-network.selfLink)
+      subnetwork: $(ref.hydragen-europe-north-subnetwork.selfLink)
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT
+- type: compute.v1.instance
+  name: hydragen-k8s-worker-3
+  properties:
+    zone: europe-north1-a
+    machineType: zones/europe-north1-a/machineTypes/e2-standard-8
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        sourceImage: projects/ubuntu-os-cloud/global/images/family/ubuntu-2004-lts
+    networkInterfaces:
+    - network: $(ref.hydragen-internal-network.selfLink)
+      subnetwork: $(ref.hydragen-europe-north-subnetwork.selfLink)
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT
