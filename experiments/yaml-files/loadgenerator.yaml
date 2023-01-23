@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgenerator
+  namespace: experiments
+spec:
+  selector:
+    matchLabels:
+      app: loadgenerator
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: loadgenerator
+      annotations:
+        sidecar.istio.io/rewriteAppHTTPProbers: "true"
+    spec:
+      terminationGracePeriodSeconds: 5
+      restartPolicy: Always
+      containers:
+      - name: main
+        image: salehsedghpour/loadgenerator:prev-git
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: FRONTEND_ADDR
+          value: "frontend/cart"
+        - name: STRING_COMMAND
+          value: "
+             setConcurrency 230;
+             sleep 200000;    "
+        resources:
+          requests:
+            cpu: 250m
+            memory: 256Mi
+          limits:
+            cpu: 2000m
+            memory: 1024Mi
+      nodeSelector:
+        node-role: master
+      tolerations:
+        - key: "node-role.kubernetes.io/master"
+          operator: "Exists"
+          effect: "NoSchedule"
