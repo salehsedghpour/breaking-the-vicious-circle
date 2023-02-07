@@ -1,4 +1,4 @@
-from experiments.libs.functions import get_nodes
+import experiments.libs.functions
 from prometheus_api_client import PrometheusConnect
 from datetime import datetime
 
@@ -6,13 +6,14 @@ from datetime import datetime
 
 class PromQuery:
     def __init__(self):
-        nodes = get_nodes()
+        nodes = experiments.libs.functions.get_nodes()
         if nodes[-1]['type'] == 'worker':
             self.prom_host = nodes[-1]['address']
         else:
             self.prom_host = nodes[1]['address']
+        self.prom_host = "k8s.ericsson.com"
         self.prom_port = "30090"
-        self.prom_address = "http://" + prom_host + ":" + prom_port + "/"
+        self.prom_address = "http://" + self.prom_host + ":" + self.prom_port + "/"
         self.warmup = 9000
         self.warmdown = 3000
         self.step = 5
