@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: config-service5
+    labels:
+        name: config-service5
+        version: kubernetes
+    namespace: default
+data:
+    conf.json: '{"processes":1,"threads":1,"logging":false,"endpoints":[{"name":"end1","protocol":"http","execution_mode":"parallel","cpu_complexity":{"execution_time":0.01},"network_complexity":{"forward_requests":"asynchronous","response_payload_size":100,"called_services":[]}}]}'
+    service.proto: "syntax = \"proto3\";\n\n\nservice service1 {\n    \n    rpc end1 (Request) returns (Response) {}\n    \n}\n\nservice service2 {\n    \n    rpc end1 (Request) returns (Response) {}\n    \n}\n\nservice service3 {\n    \n    rpc end1 (Request) returns (Response) {}\n    \n}\n\nservice service4 {\n    \n    rpc end1 (Request) returns (Response) {}\n    \n}\n\nservice service5 {\n    \n    rpc end1 (Request) returns (Response) {}\n    \n}\n\n\nmessage Request {\n    string data = 1;\n}\n\nmessage Response {\n    string data = 1;\n}"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: service5
+    namespace: default
+    labels:
+        version: kubernetes
+spec:
+    selector:
+        matchLabels:
+            app: service5
+            version: kubernetes
+    replicas: 1
+    template:
+        metadata:
+            labels:
+                app: service5
+                version: kubernetes
+            annotations:
+                sidecar.istio.io/statsInclusionPrefixes: cluster.outbound,cluster_manager,listener_manager,http_mixer_filter,tcp_mixer_filter,server,cluster.xds-grp,listener,connection_manager
+                sidecar.istio.io/statsInclusionRegexps: http.*
+        spec:
+            containers:
+                - name: app
+                  image: ghcr.io/ericssonresearch/cloud-native-app-simulator/app-demo:v3.0.1
+                  imagePullPolicy: IfNotPresent
+                  env:
+                    - name: SERVICE_NAME
+                      value: service5
+                  ports:
+                    - containerPort: 5000
+                  volumeMounts:
+                    - mountPath: /usr/src/app/config
+                      name: config-data-volume
+                  readinessProbe:
+                    httpGet:
+                        path: /
+                        port: 5000
+                    initialDelaySeconds: 30
+                    periodSeconds: 1
+                  resources:
+                    limits:
+                        cpu: 100m
+                        memory: 200M
+                    requests:
+                        cpu: 100m
+                        memory: 200M
+            volumes:
+                - name: config-data-volume
+                  configMap:
+                    name: config-service5
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: service5
+    namespace: default
+    labels:
+        version: kubernetes
+    annotations:
+        http: /
+spec:
+    selector:
+        app: service5
+    ports:
+        - name: http
+          port: 80
+          targetPort: 5000
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: service5-timeout
+  namespace: default
+spec:
+  hosts:
+  - service5
+  http:
+  - route:
+    - destination:
+        host: service5
+    timeout: 5s
