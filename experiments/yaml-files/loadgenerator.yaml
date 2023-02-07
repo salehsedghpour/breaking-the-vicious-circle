@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: loadgenerator
-  namespace: experiments
+  namespace: default
 spec:
   selector:
     matchLabels:
@@ -35,9 +35,3 @@ spec:
           limits:
             cpu: 2000m
             memory: 1024Mi
-      nodeSelector:
-        node-role: master
-      tolerations:
-        - key: "node-role.kubernetes.io/master"
-          operator: "Exists"
-          effect: "NoSchedule"
