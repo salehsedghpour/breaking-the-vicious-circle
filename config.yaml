@@ -1,0 +1,5 @@
+# Cluster selection
+# If you have different k8s clusters and you are going to use an specific cluster, set "other_clusters" to true
+# and set "target_cluster_name" to the name of the cluster you are targeting.
+other_clusters: false
+target_cluster_name: "kubernetes-admin@kubernetes"
