@@ -87,7 +87,7 @@ def get_nodes():
         logging.warning(e)
 
 
-def calculate_capacity(lg_address, experiment_scenario, experiment_traffic_step_duration, output_log_file_name, extra_data):
+def calculate_capacity(lg_address, experiment_scenario, experiment_traffic_step_duration, experiment_duration, output_log_file_name, extra_data):
     """
     This function will perform the experiment sizing for the specific address
     :return:
@@ -116,6 +116,7 @@ def calculate_capacity(lg_address, experiment_scenario, experiment_traffic_step_
             logging.warning("There was a problem loading the yaml file in tuning experiments")
             logging.warning(e)
         
+        time.sleep(experiment_duration)
         experiment_end = int(time.time() * 1000)
 
         with open(output_log_file_name, 'a') as csv_file:
@@ -127,4 +128,12 @@ def calculate_capacity(lg_address, experiment_scenario, experiment_traffic_step_
                 extra_data[1]
             ])
             csv_file.close()
+    with open(functions.get_project_root()+'/experiments/yaml-files/loadgenerator.yaml', "r") as yaml_file:
+        yaml_object = None
+        try:
+            yaml_object = yaml.safe_load(yaml_file)
+            deployment_crud.delete_deployment(yaml_object)
+        except yaml.YAMLError as e:
+            logging.warning("There was a problem loading the yaml file in tuning experiments")
+            logging.warning(e)
 
