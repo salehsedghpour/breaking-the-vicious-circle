@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: config-second
+    labels:
+        name: config-second
+        version: kubernetes
+    namespace: default
+data:
+    conf.json: '{"processes":1,"threads":1,"logging":false,"endpoints":[{"name":"end1","protocol":"http","execution_mode":"parallel","cpu_complexity":{"execution_time":0.01},"network_complexity":{"forward_requests":"asynchronous","response_payload_size":100,"called_services":[]}}]}'
+    service.proto: "syntax = \"proto3\";\n\n\nservice first {\n    \n    rpc end1 (Request) returns (Response) {}\n    \n}\n\nservice second {\n    \n    rpc end1 (Request) returns (Response) {}\n    \n}\n\n\nmessage Request {\n    string data = 1;\n}\n\nmessage Response {\n    string data = 1;\n}"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: second
+    namespace: default
+    labels:
+        version: kubernetes
+spec:
+    selector:
+        matchLabels:
+            app: second
+            version: kubernetes
+    replicas: 1
+    template:
+        metadata:
+            labels:
+                app: second
+                version: kubernetes
+            annotations:
+                sidecar.istio.io/statsInclusionPrefixes: cluster.outbound,cluster_manager,listener_manager,http_mixer_filter,tcp_mixer_filter,server,cluster.xds-grp,listener,connection_manager
+                sidecar.istio.io/statsInclusionRegexps: http.*
+        spec:
+            containers:
+                - name: app
+                  image: ghcr.io/ericssonresearch/cloud-native-app-simulator/app-demo:v3.0.1
+                  imagePullPolicy: IfNotPresent
+                  env:
+                    - name: SERVICE_NAME
+                      value: second
+                  ports:
+                    - containerPort: 5000
+                  volumeMounts:
+                    - mountPath: /usr/src/app/config
+                      name: config-data-volume
+                  readinessProbe:
+                    httpGet:
+                        path: /
+                        port: 5000
+                    initialDelaySeconds: 30
+                    periodSeconds: 1
+                  resources:
+                    limits:
+                        cpu: 1000m
+                        memory: 1000M
+                    requests:
+                        cpu: 1000m
+                        memory: 1000M
+            volumes:
+                - name: config-data-volume
+                  configMap:
+                    name: config-second
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: second
+    namespace: default
+    labels:
+        version: kubernetes
+    annotations:
+        http: /
+spec:
+    selector:
+        app: second
+    ports:
+        - name: http
+          port: 80
+          targetPort: 5000
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: second-timeout
+  namespace: default
+spec:
+  hosts:
+  - second
+  http:
+  - route:
+    - destination:
+        host: second
+    timeout: 5s
