@@ -1,0 +1,2 @@
+kubernetes==25.3.0
+prometheus_api_client==0.5.1
