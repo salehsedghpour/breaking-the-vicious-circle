@@ -19,15 +19,15 @@ spec:
       - env:
         - name: REDIS_ADDR
           value: redis-cart:6379
-        image: gcr.io/google-samples/microservices-demo/cartservice:v0.2.2
+        image: gcr.io/google-samples/microservices-demo/cartservice:v0.5.1
         livenessProbe:
           exec:
             command:
             - /bin/grpc_health_probe
             - -addr=:7070
-            - -rpc-timeout=5s
-          initialDelaySeconds: 15
-          periodSeconds: 10
+            - -rpc-timeout=15s
+          initialDelaySeconds: 30
+          periodSeconds: 30
         name: server
         ports:
         - containerPort: 7070
@@ -36,8 +36,9 @@ spec:
             command:
             - /bin/grpc_health_probe
             - -addr=:7070
-            - -rpc-timeout=5s
-          initialDelaySeconds: 15
+            - -rpc-timeout=15s
+          initialDelaySeconds: 30
+          periodSeconds: 30
         resources:
           limits:
             cpu: 300m

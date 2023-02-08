@@ -21,13 +21,15 @@ spec:
           value: "8080"
         - name: PRODUCT_CATALOG_SERVICE_ADDR
           value: productcatalogservice:3550
-        image: gcr.io/google-samples/microservices-demo/recommendationservice:v0.2.2
+        image: gcr.io/google-samples/microservices-demo/recommendationservice:v0.5.1
         livenessProbe:
           exec:
             command:
             - /bin/grpc_health_probe
             - -addr=:8080
-          periodSeconds: 5
+            - -rpc-timeout=15s
+          initialDelaySeconds: 30
+          periodSeconds: 30
         name: server
         ports:
         - containerPort: 8080
@@ -36,7 +38,9 @@ spec:
             command:
             - /bin/grpc_health_probe
             - -addr=:8080
-          periodSeconds: 5
+            - -rpc-timeout=15s
+          initialDelaySeconds: 30
+          periodSeconds: 30
         resources:
           limits:
             cpu: 400m
