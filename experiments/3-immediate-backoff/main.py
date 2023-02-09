@@ -11,7 +11,7 @@ logging.config.fileConfig(functions.get_project_root()+'/experiments/logging.ini
 functions.k8s_authentication()
 
 
-output_log_file_name = functions.get_project_root()+'/logs/exp-2-retry-intuition.csv'
+output_log_file_name = functions.get_project_root()+'/logs/exp-3-immediate-controller.csv'
 deployment_list = ['adservice-dep', 'cartservice-dep', 'checkoutservice-dep', 'currencyservice-dep', 'emailservice-dep',
                     'frontend-dep', 'paymentservice-dep', 'productcatalogservice-dep', 'recommendationservice-dep',
                     'redis-cart-dep', 'shippingservice-dep']
@@ -19,11 +19,14 @@ services_list = ['adservice', 'cartservice', 'checkoutservice', 'currencyservice
                     'frontend', 'paymentservice', 'productcatalogservice', 'recommendationservice',
                     'redis-cart', 'shippingservice']
 svc_dep_list = deployment_list + services_list
+prometheus_host = 'labumu.se'
+# experiment duration: 5 minutes
+experiment_duration = 300
 
 
 # Create the log files
 with open(output_log_file_name, 'w') as csv_file:
-    fieldnames = ['app', 'start', 'end', 'attempt']
+    fieldnames = ['traffic','cb', 'retry', 'start', 'end']
     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
     writer.writeheader()
     csv_file.close()
@@ -49,10 +52,106 @@ for service in svc_dep_list:
             logging.warning("There was a problem loading the yaml file in deploying emulatade app")
             logging.warning(e)
 logging.info("Please wait for some time that all pods are readly...")
-time.sleep(60)
+time.sleep(120)
 
 
+# Perform the experiments without controller with static overload
+with open(functions.get_project_root()+'/experiments/yaml-files/loadgenerator.yaml', "r") as yaml_file:
+    lg_address = "frontend/cart"
+    yaml_object = None
+    experiment_start = int(time.time() * 1000)
+    try:
+        yaml_object = yaml.safe_load(yaml_file)
+        traffic_scenario = """
+            for j in {};
+                        do
+                        setConcurrency $j;
+                        sleep {};
+                        done;
+            echo "done";
+            pkill -15 httpmon;
+            """.format("{110..111..1}", 300)
 
+        yaml_object['spec']['template']['spec']['containers'][0]['env'][-1]['value'] = traffic_scenario
+        yaml_object['spec']['template']['spec']['containers'][0]['env'][0]['value'] = lg_address
+        deployment_crud.create_deployment(yaml_object)
+    except yaml.YAMLError as e:
+        logging.warning("There was a problem loading the yaml file in loadgenerator deployment")
+        logging.warning(e)
+    
+    logging.info("Wait {wait_time} seconds for the experiments without controller and static overload to be done.".format(wait_time=str(experiment_duration)))
+    time.sleep(experiment_duration)
+    experiment_end = int(time.time() * 1000)
+
+    with open(output_log_file_name, 'a') as csv_file:
+        writer = csv.writer(csv_file, delimiter=",")
+        writer.writerow([
+            'static-110', # Traffic
+            '-', #CB
+            '-', # Retry
+            experiment_start, # Start
+            experiment_end, # end
+        ])
+        csv_file.close()
+with open(functions.get_project_root()+'/experiments/yaml-files/loadgenerator.yaml', "r") as yaml_file:
+    yaml_object = None
+    try:
+        yaml_object = yaml.safe_load(yaml_file)
+        deployment_crud.delete_deployment(yaml_object)
+    except yaml.YAMLError as e:
+        logging.warning("There was a problem loading the yaml file")
+        logging.warning(e)
+
+
+# Perform the experiments without controller with static overload and spikes
+with open(functions.get_project_root()+'/experiments/yaml-files/loadgenerator.yaml', "r") as yaml_file:
+    lg_address = "frontend/cart"
+    yaml_object = None
+    experiment_start = int(time.time() * 1000)
+    try:
+        yaml_object = yaml.safe_load(yaml_file)
+        traffic_scenario = """
+            for j in {};
+                do
+                setConcurrency {};
+                sleep {};
+                setConcurrency {};
+                sleep {}
+                done;
+            echo "done";
+            pkill -15 httpmon;
+            """.format("{1..12..1}", 110, 30, 160, 5)
+
+        yaml_object['spec']['template']['spec']['containers'][0]['env'][-1]['value'] = traffic_scenario
+        yaml_object['spec']['template']['spec']['containers'][0]['env'][0]['value'] = lg_address
+        deployment_crud.create_deployment(yaml_object)
+    except yaml.YAMLError as e:
+        logging.warning("There was a problem loading the yaml file in loadgenerator deployment")
+        logging.warning(e)
+    
+    logging.info("Wait {wait_time} seconds for the experiments without controller and static overload to be done.".format(wait_time=str(experiment_duration)))
+    time.sleep(experiment_duration)
+    experiment_end = int(time.time() * 1000)
+
+    with open(output_log_file_name, 'a') as csv_file:
+        writer = csv.writer(csv_file, delimiter=",")
+        writer.writerow([
+            'spike-110-160', # Traffic
+            '-', #CB
+            '-', # Retry
+            experiment_start, # Start
+            experiment_end, # end
+        ])
+        csv_file.close()
+with open(functions.get_project_root()+'/experiments/yaml-files/loadgenerator.yaml', "r") as yaml_file:
+    yaml_object = None
+    try:
+        yaml_object = yaml.safe_load(yaml_file)
+        deployment_crud.delete_deployment(yaml_object)
+    except yaml.YAMLError as e:
+        logging.warning("There was a problem loading the yaml file")
+        logging.warning(e)
+        
 
 # Delete Tthe online-boutique
 for service in svc_dep_list:
