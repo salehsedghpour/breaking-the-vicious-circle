@@ -1,8 +1,9 @@
 from kubernetes import config, client
 from kubernetes.client import ApiClient
-from experiments.libs.prometheus_client import PromQuery
+from experiments.libs.prom_client import PromQuery
 from experiments.libs import functions, deployment_crud
 import logging, yaml, os, time, csv
+from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 
 
 def get_project_root():
@@ -137,3 +138,14 @@ def calculate_capacity(lg_address, experiment_scenario, experiment_traffic_step_
             logging.warning("There was a problem loading the yaml file in tuning experiments")
             logging.warning(e)
 
+def push_to_prom_pg(data):
+    registry = CollectorRegistry()
+    address = 'labumu.se'
+    pg_port = "30091"
+    pg_address = "http://" + address + ":" + pg_port + "/"
+
+    g = Gauge(data['name'], data['description'], registry=registry)
+    g.set(data['value'])
+    push_to_gateway(pg_address, job=data['job'], registry=registry)
+
+    logging.info("The value {} successfully pushed to pushgateway for {}".format(str(data['value']), data['name']))
