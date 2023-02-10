@@ -11,7 +11,7 @@ class PromQuery:
             self.prom_host = nodes[-1]['address']
         else:
             self.prom_host = nodes[1]['address']
-        self.prom_host = "k8s.ericsson.com"
+        self.prom_host = "labumu.se"
         self.prom_port = "30090"
         self.prom_address = "http://" + self.prom_host + ":" + self.prom_port + "/"
         self.warmup = 9000
