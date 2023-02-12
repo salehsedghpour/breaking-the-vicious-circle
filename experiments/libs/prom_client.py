@@ -6,11 +6,11 @@ from datetime import datetime
 
 class PromQuery:
     def __init__(self):
-        nodes = experiments.libs.functions.get_nodes()
-        if nodes[-1]['type'] == 'worker':
-            self.prom_host = nodes[-1]['address']
-        else:
-            self.prom_host = nodes[1]['address']
+        # nodes = experiments.libs.functions.get_nodes()
+        # if nodes[-1]['type'] == 'worker':
+        #     self.prom_host = nodes[-1]['address']
+        # else:
+        #     self.prom_host = nodes[1]['address']
         self.prom_host = "labumu.se"
         self.prom_port = "30090"
         self.prom_address = "http://" + self.prom_host + ":" + self.prom_port + "/"
@@ -35,7 +35,6 @@ class PromQuery:
         prom = PrometheusConnect(url=self.prom_address, disable_ssl=True)
         start = datetime.fromtimestamp((self.start + self.warmup) / 1000)
         end = datetime.fromtimestamp((self.end - self.warmdown) / 1000)
-        print("query")
 
         result = prom.custom_query_range(query=self.query, start_time=start, end_time=end, step=self.step)
         return result
