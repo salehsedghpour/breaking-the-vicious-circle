@@ -84,3 +84,11 @@ class PromQuery:
         self.query = 'destination_rule_http2_max_requests{exported_job="' + job + '"}'
         result = self.query_prometheus()
         return result
+    
+    def get_retry_attempt(self):
+        """
+            This function get the retry attempt which is pushed in pushgateway (attempts)
+        """
+        self.query = 'retry_attempts_'+self.service
+        result = self.query_prometheus()
+        return result

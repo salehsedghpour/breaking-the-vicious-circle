@@ -3,7 +3,7 @@ from experiments.libs import functions, prom_client
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-df = pd.read_csv(functions.get_project_root()+'/logs/exp-3-immediate-controller.csv')
+df = pd.read_csv(functions.get_project_root()+'/logs/exp-3-cb-1-interval-1ms.csv')
 
 
 CB_values =['dynamic', 1, 50, None]
@@ -16,8 +16,8 @@ fig, axs = plt.subplots(nrows=4, ncols=3, figsize=(8, 8), sharex=True,dpi=300)
 i = 0
 j = 0
 
-fig.suptitle('Throughput of services when there is an overload with spikes and \n and a dynamic circuit breaker for the third tier')
-data = df.loc[(df['traffic'] == "spike-110-160") & (df['cb'] == 'dynamic')]
+# fig.suptitle('Throughput of services when there is a static overload and \n and a dynamic circuit breaker for the third tier')
+data = df.loc[(df['traffic'] == "static-110") & (df['cb'] == 1)]
 
 for index, row in data.iterrows():
     for service in challenging_services:
@@ -28,7 +28,7 @@ for index, row in data.iterrows():
         prom_inst.response_code = "200"
         prom_inst.namespace = "default"
         prom_inst.percentile = "0.95"
-        prom_inst.warmup = 0
+        prom_inst.warmup = 90000
         prom_inst.warmdown = 0
         prom_inst.service = service
         if row['retry'] == "dynamic" and service == "frontend":
@@ -85,6 +85,8 @@ for index, row in data.iterrows():
             "timestamp": [],
         }
 
+
+
         for item in status_code_prom_data:
 
             if item['metric']['response_code'] == "200" and item['metric']['response_flags'] == "-":
@@ -124,7 +126,8 @@ for index, row in data.iterrows():
         circuit_broken['data'] = circuit_broken['data'][:len(circuit_broken['timestamp'])]
         failed['timestamp'] = [ii for ii in failed['timestamp'] if ii <= 300]
         failed['data'] = failed['data'][:len(failed['timestamp'])]
-
+        total_sucess = int(sum(success['data']))
+        total_failed = int(sum(failed['data']))
         axs[i, j].grid()
         axs[i, j].plot(success['timestamp'], success['data'], color="green", label="Successful")
         axs[i, j].plot(circuit_broken['timestamp'], circuit_broken['data'], color="orange", label="Circuit Broken")
@@ -137,11 +140,12 @@ for index, row in data.iterrows():
         # axs[i, j].set_yticks([10, 100, 1000])
         axs[i, j].yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
         #axs[i, j].yaxis.set_minor_formatter(mpl.ticker.ScalarFormatter())
-        if i == 2:
-            if j == 2:
+        if i == 3:
+            if j == 1:
                 axs[i, j].legend()
             axs[i, j].set_xlabel("Time (sec)")
         if i == 0:
+
             if j == 0:
                 axs[i, j].set_title("First tier")
             elif j == 1:
@@ -150,12 +154,15 @@ for index, row in data.iterrows():
                 axs[i, j].set_title("Third tier")
 
         if j == 0:
+            axs[i, j].text(0.5, 0.6, 'Total Successful Reqs: '+ str(total_sucess), horizontalalignment='center', verticalalignment='center', transform=axs[i, j].transAxes)
+            axs[i, j].text(0.5, 0.4, 'Total Failed Reqs: '+ str(total_failed), horizontalalignment='center', verticalalignment='center', transform=axs[i, j].transAxes)
+
             if row['retry'] == "dynamic":
                 axs[i, j].set_ylabel( "Dynamic Retry Attempt\n(req/sec)")
             elif row['retry'] == "2":
                 axs[i, j].set_ylabel( "2 Retry Attempts\n(req/sec)")
             elif row['retry'] == "10":
-                axs[i, j].set_ylabel( "10 Retry Attempts\n(req/sec)")
+                axs[i, j].set_ylabel( "5 Retry Attempts\n(req/sec)")
             elif row['retry'] == "none":
                 axs[i, j].set_ylabel( "No Retry Attempt\n(req/sec)")
             
@@ -164,7 +171,7 @@ for index, row in data.iterrows():
 plt.xticks([0, 60,120,180,240])
 
 plt.tight_layout()
-plt.savefig(functions.get_project_root()+'/experiments/3-immediate-backoff/result-thr-overload-spike-cb-dynamic.png')
+plt.savefig(functions.get_project_root()+'/experiments/3-immediate-backoff/result-thr-cb-1-interval-1ms.png')
 
     
 

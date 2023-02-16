@@ -16,10 +16,10 @@ logging.config.fileConfig(functions.get_project_root()+'/experiments/logging.ini
 
 functions.k8s_authentication()
 
-CB_values =['dynamic', [1, 50], None]
+CB_values =[[1]]#'dynamic', 1, 50, None]
 retry_values = ['dynamic', [2, 10], None]
-traffic_patterns = ['static', 'spike']
-output_log_file_name = functions.get_project_root()+'/logs/exp-3-immediate-controller.csv'
+traffic_patterns = ['static', ]#'spike']
+output_log_file_name = functions.get_project_root()+'/logs/exp-3-cb-1-interval-1ms.csv'
 deployment_list = ['adservice-dep', 'cartservice-dep', 'checkoutservice-dep', 'currencyservice-dep', 'emailservice-dep',
                     'frontend-dep', 'paymentservice-dep', 'productcatalogservice-dep', 'recommendationservice-dep',
                     'redis-cart-dep', 'shippingservice-dep']
@@ -163,6 +163,7 @@ def create_retry(service_name, namespace, retry_attempt ):
                     ],
                     "retries": {
                         "attempts": retry_attempt,
+                        "perTryTimeout": "1ms",
                         "retryOn": "connect-failure,refused-stream,unavailable,cancelled,retriable-status-codes,5xx,deadline-exceeded"
                     },
                 }
@@ -194,6 +195,7 @@ def delete_retry(service_name, namespace, retry_attempt ):
                     ],
                     "retries": {
                         "attempts": retry_attempt,
+                        "perTryTimeout": "1ms",
                         "retryOn": "connect-failure,refused-stream,unavailable,cancelled,retriable-status-codes,5xx,deadline-exceeded"
                     },
                 }
@@ -204,14 +206,16 @@ def delete_retry(service_name, namespace, retry_attempt ):
     
 # initialize prometheus client
 prom_inst = prom_client.PromQuery()
-prom_inst.response_code = "200"
+# prom_inst.response_code = "200"
 prom_inst.namespace = "default"
 prom_inst.percentile = "0.95"
+prom_inst.service = layer_3_services[-1]
+
 
 # Initialize the CB controller
 cb_controller = controllers.CB_Controller()
 
-cb_controller.trgt_rsp_time_95 = 100
+cb_controller.trgt_rsp_time_95 = 0.1
 cb_controller.p = 0.9
 cb_controller.cur_rsp_time_95 = 0.01
 cb_controller.cur_que_len = 1024
@@ -297,24 +301,61 @@ def enforce_cb_controller(start_time):
 
 def enforce_retry_controller():
     
-    prom_inst.start = int(time.time() * 1000)
-    prom_inst.end = prom_inst.start
+    prom_inst.start = int(time.time() * 1000 - 15000)
+    prom_inst.end =  int(time.time() * 1000 - 10000)
     prom_inst.warmup = 0
     prom_inst.warmdown = 0
-
     prom_inst.service = layer_3_services[-1]
     # {"status":"success","data":{"resultType":"vector","result":[{"metric":{"response_code":"0","response_flags":"unknown"},"value":[1675787029,"0"]},{"metric":{"response_code":"200","response_flags":"-"},"value":[1675787029,"163.6"]},{"metric":{"response_code":"500","response_flags":"-"},"value":[1675787029,"0"]},{"metric":{"response_code":"500","response_flags":"DC"},"value":[1675787029,"0"]}]}}
     status_codes = prom_inst.get_status_codes()
+    failed_requests_list = []
     failed_requests = 0
     for item in status_codes:
-        if item['metric']['response_code'] != "200":
+        if (item['metric']['response_code'] != "200") or (item['metric']['response_code'] == "200" and item['metric']['response_flags'] != '-'):
+
+            avg = 0
+            for i in item['values']:
+                print("i")
+                print(i)
+                avg = int(float(i[1])) + avg
+            print("avg")
+            print(avg)
+            avg = avg/len(item['values'])
+            failed_requests = failed_requests + int(avg)
+    print("failed_requests 1:")
+    print(failed_requests)
+    failed_requests_list.append(failed_requests)
+    prom_inst.start = int(time.time() * 1000 - 10000)
+    prom_inst.end =  int(time.time() * 1000 - 5000)
+    failed_requests = 0
+    for item in status_codes:
+        if (item['metric']['response_code'] != "200") or (item['metric']['response_code'] == "200" and item['metric']['response_flags'] != '-'):
             avg = 0
             for i in item['values']:
                 avg = int(float(i[1]))
             avg = avg/len(item['values'])
             failed_requests = failed_requests + int(avg)
-    retry_controller.failed_requests.append(failed_requests)
+    failed_requests_list.append(failed_requests)
+    print("failed_requests 2:")
+    print(failed_requests)
+    prom_inst.start = int(time.time() * 1000 - 5000)
+    prom_inst.end =  int(time.time() * 1000 )
+    failed_requests = 0
+    for item in status_codes:
+        if (item['metric']['response_code'] != "200") or (item['metric']['response_code'] == "200" and item['metric']['response_flags'] != '-'):
+            avg = 0
+            for i in item['values']:
+                avg = int(float(i[1]))
+            avg = avg/len(item['values'])
+            failed_requests = failed_requests + int(avg)
+    failed_requests_list.append(failed_requests)
+    print("failed_requests 3:")
+    print(failed_requests)
+    print("The failed request list:")
+    print(failed_requests_list)
+    retry_controller.failed_requests = failed_requests_list
     retry_controller.specify_retry_threshold()
+    failed_requests_list = []
     vs_retry = {
         "apiVersion": "networking.istio.io/v1alpha3",
         "kind": "VirtualService",
@@ -337,12 +378,22 @@ def enforce_retry_controller():
                     ],
                     "retries": {
                         "attempts": retry_controller.retry_attempt,
+                        "perTryTimeout": "1ms",
                         "retryOn": "connect-failure,refused-stream,unavailable,cancelled,retriable-status-codes,5xx,deadline-exceeded"
                     },
                 }
             ]
         }
     }
+
+    data_for_pg_tier_1 = {
+        "name": "retry_attempts_"+layer_3_services[-1],
+        "description": "Value of retry attempt applied to Istio as DR",
+        "value":  retry_controller.retry_attempt,
+        "job": "onetier1"
+    }
+
+    functions.push_to_prom_pg(data_for_pg_tier_1)
     # delete previous one
     virtual_service_crud.delete_virtual_service(vs_retry)
     # create new one
@@ -354,6 +405,7 @@ def enforce_retry_controller():
 for CB_value in CB_values:
     for retry_value in retry_values:
         for traffic_pattern in traffic_patterns:
+            time.sleep(30)
             if CB_value == 'dynamic':
                 if retry_value == 'dynamic':
                     if traffic_pattern == 'static':

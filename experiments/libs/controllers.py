@@ -28,22 +28,29 @@ class Immediate_Backoff_Controller:
         self.failed_requests = []
         self.retry_attempt = 1
     def detect_increase(self):
-        if self.failed_requests[2] >= self.failed_requests[1] >= self.failed_requests[0]:
-            if self.failed_requests[2] != 0:
-                return True
-            else:
-                return False
+        if self.failed_requests[2]> 0:
+            # if self.failed_requests[2] != 0:
+            #     print(self.failed_requests)
+            #     return True
+            # else:
+            #     return False
+            return True
         else:
             return False
+            
     def specify_retry_threshold(self):
         if len(self.failed_requests) == 3:
-            is_increased = self.detect_increase
+            is_increased = self.detect_increase()
             if is_increased:
                 self.failed_requests = []
                 self.retry_attempt = 1
             else:
                 self.failed_requests = []
                 self.retry_attempt = 5
+        else:
+            print("the length is less than 3")
+        
+
 
 
 class Retry_Controller:

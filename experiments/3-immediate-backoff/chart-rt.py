@@ -3,7 +3,7 @@ from experiments.libs import functions, prom_client
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-df = pd.read_csv(functions.get_project_root()+'/logs/exp-3-immediate-controller.csv')
+df = pd.read_csv(functions.get_project_root()+'/logs/exp-3-cb-1-interval-1ms.csv')
 
 
 CB_values =['dynamic', 1, 50, None]
@@ -15,10 +15,10 @@ fig, axs = plt.subplots(nrows=4, ncols=3, figsize=(8, 8), sharex=True,dpi=300)
 
 i = 0
 j = 0
-fig.suptitle('Response time of services when there is an overload with spikes and \n and a dynamic circuit breaker for the third tier')
+# fig.suptitle('Response time of services when there is a static overload and \n and a dynamic circuit breaker for the third tier')
 
 
-data = df.loc[(df['traffic'] == "spike-110-160") & (df['cb'] == 'dynamic')]
+data = df.loc[(df['traffic'] == "static-110") & (df['cb'] == 1)]
 
 for index, row in data.iterrows():
     for service in challenging_services:
@@ -29,7 +29,7 @@ for index, row in data.iterrows():
         prom_inst.response_code = "200"
         prom_inst.namespace = "default"
         prom_inst.percentile = "0.95"
-        prom_inst.warmup = 30000
+        prom_inst.warmup = 90000
         prom_inst.warmdown = 0
         prom_inst.service = service
         if row['retry'] == "dynamic" and service == "frontend":
@@ -98,7 +98,7 @@ for index, row in data.iterrows():
         # axs[i, j].set_yticks([10, 100, 1000])
         axs[i, j].yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
         #axs[i, j].yaxis.set_minor_formatter(mpl.ticker.ScalarFormatter())
-        if i == 2:
+        if i == 3:
             # if j == 2:
             #     axs[i, j].legend()
             axs[i, j].set_xlabel("Time (sec)")
@@ -116,7 +116,7 @@ for index, row in data.iterrows():
             elif row['retry'] == "2":
                 axs[i, j].set_ylabel( "2 Retry Attempts\n(ms)")
             elif row['retry'] == "10":
-                axs[i, j].set_ylabel( "10 Retry Attempts\n(ms)")
+                axs[i, j].set_ylabel( "5 Retry Attempts\n(ms)")
             elif row['retry'] == "none":
                 axs[i, j].set_ylabel( "No Retry Attempt\n(ms)")
             
@@ -127,7 +127,7 @@ plt.xticks([0, 60,120,180,240])
 plt.tight_layout()
 
 plt.savefig("experimentstest.png")
-plt.savefig(functions.get_project_root()+'/experiments/3-immediate-backoff/result-rt-overload-spike-cb-dynamic.png')
+plt.savefig(functions.get_project_root()+'/experiments/3-immediate-backoff/result-rt-cb-1-interval-1ms.png')
 
     
 
