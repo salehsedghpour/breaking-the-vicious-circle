@@ -19,7 +19,7 @@ functions.k8s_authentication()
 CB_values =[[50]]#'dynamic', 1, 50, None]
 retry_values = ['dynamic', [2, 10], None]
 traffic_patterns = ['static', ]#'spike']
-output_log_file_name = functions.get_project_root()+'/logs/exp-3-cb-50-interval-1ms.csv'
+output_log_file_name = functions.get_project_root()+'/logs/exp-3-cb-50-interval-25ms.csv'
 deployment_list = ['adservice-dep', 'cartservice-dep', 'checkoutservice-dep', 'currencyservice-dep', 'emailservice-dep',
                     'frontend-dep', 'paymentservice-dep', 'productcatalogservice-dep', 'recommendationservice-dep',
                     'redis-cart-dep', 'shippingservice-dep']
