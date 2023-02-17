@@ -3,7 +3,7 @@ from experiments.libs import functions, prom_client
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-df = pd.read_csv(functions.get_project_root()+'/logs/exp-3-cb-1-interval-25ms.csv')
+df = pd.read_csv(functions.get_project_root()+'/logs/exp-3-cb-50-interval-1ms.csv')
 
 
 CB_values =['dynamic', 1, 50, None]
@@ -18,7 +18,7 @@ j = 0
 # fig.suptitle('Response time of services when there is a static overload and \n and a dynamic circuit breaker for the third tier')
 
 
-data = df.loc[(df['traffic'] == "static-110") & (df['cb'] == 1)]
+data = df.loc[(df['traffic'] == "static-110") & (df['cb'] == 50)]
 
 for index, row in data.iterrows():
     for service in challenging_services:
@@ -127,7 +127,7 @@ plt.xticks([0, 60,120,180,240])
 plt.tight_layout()
 
 plt.savefig("experimentstest.png")
-plt.savefig(functions.get_project_root()+'/experiments/3-immediate-backoff/result-rt-cb-1-interval-25ms.png')
+plt.savefig(functions.get_project_root()+'/experiments/3-immediate-backoff/result-rt-cb-50-interval-1ms.png')
 
     
 
