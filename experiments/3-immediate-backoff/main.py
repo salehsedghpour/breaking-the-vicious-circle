@@ -16,10 +16,10 @@ logging.config.fileConfig(functions.get_project_root()+'/experiments/logging.ini
 
 functions.k8s_authentication()
 
-CB_values =[None]#'dynamic', 1, 50, None]
+CB_values =['dynamic']#'dynamic', 1, 50, None]
 retry_values = ['dynamic', [2, 10], None]
 traffic_patterns = ['static', ]#'spike']
-output_log_file_name = functions.get_project_root()+'/logs/exp-3-cb-none-interval-25ms.csv'
+output_log_file_name = functions.get_project_root()+'/logs/exp-3-cb-dynamic-interval-25ms.csv'
 deployment_list = ['adservice-dep', 'cartservice-dep', 'checkoutservice-dep', 'currencyservice-dep', 'emailservice-dep',
                     'frontend-dep', 'paymentservice-dep', 'productcatalogservice-dep', 'recommendationservice-dep',
                     'redis-cart-dep', 'shippingservice-dep']
