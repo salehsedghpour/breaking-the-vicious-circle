@@ -3,7 +3,7 @@ from experiments.libs import functions, prom_client
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-df = pd.read_csv(functions.get_project_root()+'/logs/exp-3-cb-dynamic-interval-25ms.csv')
+df = pd.read_csv(functions.get_project_root()+'/logs/exp-3-cb-dynamic-interval-1ms.csv')
 
 
 CB_values =['dynamic', 1, 50, None]
@@ -127,7 +127,7 @@ plt.xticks([0, 60,120,180,240])
 plt.tight_layout()
 
 plt.savefig("experimentstest.png")
-plt.savefig(functions.get_project_root()+'/experiments/3-immediate-backoff/result-rt-cb-dynamic-interval-25ms.png')
+plt.savefig(functions.get_project_root()+'/experiments/3-immediate-backoff/result-rt-cb-dynamic-interval-1ms.png')
 
     
 
