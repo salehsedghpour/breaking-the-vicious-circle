@@ -16,10 +16,10 @@ logging.config.fileConfig(functions.get_project_root()+'/experiments/logging.ini
 
 functions.k8s_authentication()
 
-CB_values =['dynamic']#'dynamic', 1, 50, None]
+CB_values =[[50]]#'dynamic', 1, 50, None]
 retry_values = ['dynamic', [2, 10], None]
-traffic_patterns = ['static', ]#'spike']
-output_log_file_name = functions.get_project_root()+'/logs/exp-3-cb-dynamic-interval-1ms.csv'
+traffic_patterns = ['spike', ]#'static']
+output_log_file_name = functions.get_project_root()+'/logs/exp-3-cb-50-interval-25ms-spike.csv'
 deployment_list = ['adservice-dep', 'cartservice-dep', 'checkoutservice-dep', 'currencyservice-dep', 'emailservice-dep',
                     'frontend-dep', 'paymentservice-dep', 'productcatalogservice-dep', 'recommendationservice-dep',
                     'redis-cart-dep', 'shippingservice-dep']
@@ -102,11 +102,11 @@ def loadgenerator_spike():
                     setConcurrency {};
                     sleep {};
                     setConcurrency {};
-                    sleep {}
+                    sleep {};
                     done;
                 echo "done";
                 pkill -15 httpmon;
-                """.format("{1..12..1}", 110, 30, 160, 5)
+                """.format("{1..12..1}", 10, 30, 60, 15)
 
             yaml_object['spec']['template']['spec']['containers'][0]['env'][-1]['value'] = traffic_scenario
             yaml_object['spec']['template']['spec']['containers'][0]['env'][0]['value'] = lg_address
@@ -163,7 +163,7 @@ def create_retry(service_name, namespace, retry_attempt ):
                     ],
                     "retries": {
                         "attempts": retry_attempt,
-                        "perTryTimeout": "1ms",
+                        "perTryTimeout": "25ms",
                         "retryOn": "connect-failure,refused-stream,unavailable,cancelled,retriable-status-codes,5xx,deadline-exceeded"
                     },
                 }
@@ -195,7 +195,7 @@ def delete_retry(service_name, namespace, retry_attempt ):
                     ],
                     "retries": {
                         "attempts": retry_attempt,
-                        "perTryTimeout": "1ms",
+                        "perTryTimeout": "25ms",
                         "retryOn": "connect-failure,refused-stream,unavailable,cancelled,retriable-status-codes,5xx,deadline-exceeded"
                     },
                 }
@@ -378,7 +378,7 @@ def enforce_retry_controller():
                     ],
                     "retries": {
                         "attempts": retry_controller.retry_attempt,
-                        "perTryTimeout": "1ms",
+                        "perTryTimeout": "25ms",
                         "retryOn": "connect-failure,refused-stream,unavailable,cancelled,retriable-status-codes,5xx,deadline-exceeded"
                     },
                 }
