@@ -96,3 +96,54 @@ def create_versioned_retry(service_name, retry_attempt, interval, versions):
                 }
         vs["spec"]['http'][0]['route'].append(route)
     create_virtual_service(vs)
+
+
+def delete_versioned_retry(service_name, retry_attempt, interval, versions):
+    vs = {
+        "apiVersion": "networking.istio.io/v1alpha3",
+        "kind": "VirtualService",
+        "metadata": {
+            "name": service_name+"-versioned-retry",
+            "namespace": "default"
+        },
+        "spec": {
+            "hosts": [
+                service_name+".default.svc.cluster.local"
+            ],
+            "http": [
+                {
+                    "route": [
+                        {
+                            "destination": {
+                                "host": "productcatalogservice",
+                                "subset": "v2"
+                            },
+                            "weight": 50
+                        },
+                        {
+                            "destination": {
+                                "host": "productcatalogservice",
+                                "subset": "v1"
+                            },
+                            "weight": 50
+                        }
+                    ],
+                    "retries": {
+                        "attempts": retry_attempt,
+                        "perTryTimeout": interval,
+                        "retryOn": "connect-failure,refused-stream,unavailable,cancelled,retriable-status-codes,5xx,deadline-exceeded"
+                    },
+                }
+            ]
+        }
+    }
+    for version in versions:
+        route = {
+                    "destination": {
+                        "host": service_name,
+                        "subset": version
+                    },
+                    "weight": 10
+                }
+        vs["spec"]['http'][0]['route'].append(route)
+    delete_virtual_service(vs)
