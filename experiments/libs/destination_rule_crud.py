@@ -84,12 +84,14 @@ def create_circuit_breaker_for_specific_version(service_name, service_version, m
 
 
 
-def delete_circuit_breaker(service_name, name_space):
+def delete_circuit_breaker(service_name, name_space, version=None):
     """
     :param name_space:
     :param service_name:
     :return:
     """
+    if version != None:
+        service_name = service_name+"-"+version
     try:
         api_instance = client.CustomObjectsApi()
         api_instance.delete_namespaced_custom_object(
