@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productcatalogservice-v5
+  namespace: default
+  labels:
+    name: productcatalogservice
+    version: v5
+spec:
+  selector:
+    matchLabels:
+      app: productcatalogservice
+      version: v5
+  template:
+    metadata:
+      labels:
+        app: productcatalogservice
+        version: v5
+      annotations:
+        sidecar.istio.io/statsInclusionPrefixes: cluster.outbound,cluster_manager,listener_manager,http_mixer_filter,tcp_mixer_filter,server,cluster.xds-grp,listener,connection_manager
+        sidecar.istio.io/statsInclusionRegexps: http.*
+    spec:
+      containers:
+      - env:
+        - name: PORT
+          value: "3550"
+        image: gcr.io/google-samples/microservices-demo/productcatalogservice:v0.5.0
+        livenessProbe:
+          exec:
+            command:
+            - /bin/grpc_health_probe
+            - -addr=:3550
+            - -rpc-timeout=5s
+        name: server
+        ports:
+        - containerPort: 3550
+        readinessProbe:
+          exec:
+            command:
+            - /bin/grpc_health_probe
+            - -addr=:3550
+            - -rpc-timeout=5s
+        resources:
+          limits:
+            cpu: 100m
+            memory: 2000Mi
+          requests:
+            cpu: 80m
+            memory: 2000Mi
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 5

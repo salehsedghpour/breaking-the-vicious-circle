@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: checkoutservice
+  namespace: default
+spec:
+  ports:
+  - name: grpc
+    port: 5050
+    targetPort: 5050
+  selector:
+    app: checkoutservice
+  type: ClusterIP
