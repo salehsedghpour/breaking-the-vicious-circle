@@ -175,3 +175,18 @@ def deploy_static_loadgenerator(load_lower_bound, load_upper_bound, sleep_time=3
             logging.warning(e)
         
     yaml_file.close()  
+
+
+
+def delete_loadgenerator():
+    with open(get_project_root()+'/experiments/yaml-files/loadgenerator.yaml', "r") as yaml_file:
+        yaml_object = None
+        try:
+            yaml_object = yaml.safe_load(yaml_file)
+            deployment_crud.delete_deployment(yaml_object)
+        except yaml.YAMLError as e:
+            logging.warning("There was a problem loading the yaml file in loadgenerator deployment")
+            logging.warning(e)
+        
+        logging.info("Load generator is successfully deleted.")
+    yaml_file.close()
