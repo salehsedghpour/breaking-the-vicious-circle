@@ -48,7 +48,7 @@ def clean_prom_rt(response_time_prom_data):
     if len(response_time_prom_data) > 0:
         for item in response_time_prom_data[0]['values']:
             response_time['data'].append(float(item[1]) * 1000)
-            response_time['timestamp'].append(int(item[0]))
+            response_time['timestamp'].append(float(item[0]) - float(response_time_prom_data[0]['values'][0][0]))
     return response_time
 
 #main_df = pd.DataFrame(columns=['traffic','retry_attempt', 'retry_interval', 'cb', 'successful_req', 'failed_req', 'cb_req', 'c_response_time', 'response_time'])
@@ -126,8 +126,8 @@ for log_file in log_file_names:
         prom_inst.response_code = "200"
         prom_inst.namespace = "default"
         prom_inst.percentile = "0.95"
-        prom_inst.warmup = 0
-        prom_inst.warmdown = 0
+        prom_inst.warmup = 90000
+        prom_inst.warmdown = 90000
 
         prom_inst.service = services[0] # productcatalogue
         pc_succ_req, pc_fail_req, pc_cb_req = clean_prom_status_codes(prom_inst.get_status_codes())
@@ -146,13 +146,25 @@ for log_file in log_file_names:
             "f_cb_req": f_cb_req,
             "f_rt": f_rt
         }
-
+        # print(not_aligned_dict)
+        if row['cb'] == 'none':
+            cb_value = 1024
+        else:
+            cb_value = row['cb']
+        if row['retry'] == 'none':
+            retry_value = 2
+        else:
+            retry_value = row['retry']
         aligned_dict = align_timestamps(not_aligned_dict)
+        # print(aligned_dict)
+
+        # print("----------------")
+
         number_of_rows = len(aligned_dict['pc_succ_req']['data'])
         main_data['traffic'].extend([extract_load(log_file)]*number_of_rows)
         main_data['retry_attempt'].extend([row['retry']]*number_of_rows)
         main_data['retry_interval'].extend([extract_interval(log_file)]*number_of_rows)
-        main_data['cb'].extend([row['cb']]*number_of_rows)
+        main_data['cb'].extend([cb_value]*number_of_rows)
         main_data['pc_succ_req'].extend(aligned_dict['pc_succ_req']['data'])
         main_data['pc_fail_req'].extend(aligned_dict['pc_fail_req']['data'])
         main_data['pc_cb_req'].extend(aligned_dict['pc_cb_req']['data'])
