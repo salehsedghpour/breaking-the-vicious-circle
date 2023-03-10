@@ -39,6 +39,51 @@ def create_circuit_breaker(service_name, name_space, max_requests):
         return False
 
 
+def create_circuit_breaker_for_specific_version(service_name, service_version, max_requests, name_space):
+    """
+    :param  service_name:
+    :param  service_version:
+    :param  namespace:
+    :return:
+    """
+    try:
+        api_instance = client.CustomObjectsApi()
+        cb = {
+            "apiVersion": "networking.istio.io/v1alpha3",
+            "kind": "DestinationRule",
+            "metadata": {"name": service_name+"-"+service_version+"-cb"},
+            "spec": {
+                "host": service_name,
+                "subsets": [
+                    {
+                        "name": service_version,
+                        "labels": {
+                            "version": service_version,
+                        },
+                        "trafficPolicy": {
+                            "connectionPool":{
+                                "http": {"http2MaxRequests": max_requests}
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        api_instance.create_namespaced_custom_object(
+            namespace=name_space,
+            body=cb,
+            group="networking.istio.io",
+            version="v1alpha3",
+            plural="destinationrules"
+        )
+        logging.info("Circuit breaker for service %s with value of %s is successfully created. " % (str(service_name), str(max_requests)))
+        return True
+    except ApiException as e:
+        logging.warning("Circuit breaker creation for service %s is not completed. %s" % (str(service_name), str(e)))
+        return False
+
+
+
 def delete_circuit_breaker(service_name, name_space):
     """
     :param name_space:
