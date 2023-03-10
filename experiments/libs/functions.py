@@ -149,3 +149,29 @@ def push_to_prom_pg(data):
     push_to_gateway(pg_address, job=data['job'], registry=registry)
 
     logging.info("The value {} successfully pushed to pushgateway for {}".format(str(data['value']), data['name']))
+
+
+def deploy_static_loadgenerator(load_lower_bound, load_upper_bound, sleep_time=300, lg_address="frontend/cart" ):
+    with open(get_project_root()+'/experiments/yaml-files/loadgenerator.yaml', "r") as yaml_file:
+        lg_address = "frontend/cart"
+        yaml_object = None
+        try:
+            yaml_object = yaml.safe_load(yaml_file)
+            traffic_scenario = """
+                for j in {};
+                    do
+                    setConcurrency $j;
+                    sleep {};
+                    done;
+                echo "done";
+                pkill -15 httpmon;
+                """.format("{" + str(load_lower_bound) + ".." + str(load_upper_bound) + "..1}", sleep_time)
+
+            yaml_object['spec']['template']['spec']['containers'][0]['env'][-1]['value'] = traffic_scenario
+            yaml_object['spec']['template']['spec']['containers'][0]['env'][0]['value'] = lg_address
+            deployment_crud.create_deployment(yaml_object)
+        except yaml.YAMLError as e:
+            logging.warning("There was a problem loading the yaml file in loadgenerator deployment")
+            logging.warning(e)
+        
+    yaml_file.close()  
