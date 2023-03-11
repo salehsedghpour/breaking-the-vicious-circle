@@ -72,13 +72,22 @@ def create_versioned_retry(service_name, retry_attempt, interval, versions):
             ]
         }
     }
+
+
     for version in versions:
+        weight = 0
+        if 100/len(versions) % 1 == 0:
+            weight = int(100/len(versions))
+        elif version == versions[-1]:
+            weight = int(100/len(versions)) + 1
+        else:
+            weight = int(100/len(versions))
         route = {
                     "destination": {
                         "host": service_name,
                         "subset": version
                     },
-                    "weight": 10
+                    "weight": weight
                 }
         vs["spec"]['http'][0]['route'].append(route)
     create_virtual_service(vs)
