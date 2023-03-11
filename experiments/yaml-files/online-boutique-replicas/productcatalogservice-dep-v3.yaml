@@ -42,10 +42,10 @@ spec:
             - -rpc-timeout=5s
         resources:
           limits:
-            cpu: 100m
+            cpu: 160m
             memory: 2000Mi
           requests:
-            cpu: 80m
+            cpu: 160m
             memory: 2000Mi
       serviceAccountName: default
       terminationGracePeriodSeconds: 5
