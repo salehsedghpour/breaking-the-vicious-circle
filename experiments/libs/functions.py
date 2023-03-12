@@ -1,6 +1,6 @@
 from kubernetes import config, client
 from kubernetes.client import ApiClient
-from experiments.libs.prom_client import PromQuery
+# from experiments.libs.prom_client import PromQuery
 from experiments.libs import functions, deployment_crud
 import logging, yaml, os, time, csv
 from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
