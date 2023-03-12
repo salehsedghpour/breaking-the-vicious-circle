@@ -39,33 +39,46 @@ class PromQuery:
         result = prom.custom_query_range(query=self.query, start_time=start, end_time=end, step=self.step)
         return result
 
-    def get_response_time(self):
+    def get_response_time(self, version=None):
         """
         This function will get the response time for a given service in a given time interval and based on a given
         percentile
         :return:
         """
+        if version == None:
+            version = 'latest'
         if self.response_code == "":
             self.query = '(histogram_quantile(' + str(
                 self.percentile) + ', sum(irate(istio_request_duration_milliseconds_bucket{reporter="'+ self.reporter +\
-                '", destination_service=~"' + self.service + '.' + self.namespace + '.svc.cluster.local"}[1m])) ' \
+                '", destination_service=~"' + self.service + '.' + self.namespace + '.svc.cluster.local", destination_canonical_revision="'+version+'"}[1m])) ' \
                 'by (le)) / 1000)'
         else:
             self.query = '(histogram_quantile(' + str(
                 self.percentile) + ', sum(irate(istio_request_duration_milliseconds_bucket{reporter="' + self.reporter + \
                  '", destination_service=~"' + self.service + '.' + self.namespace + '.svc.cluster.local",' \
-                 'response_code="'+ self.response_code +'"}[1m])) by (le)) / 1000)'
+                 'response_code="'+ self.response_code +'", destination_canonical_revision="'+version+'"}[1m])) by (le)) / 1000)'
         result = self.query_prometheus()
         return result
 
-    def get_status_codes(self):
+    def get_status_codes(self, version=None):
         """
             This function will get the request status codes for agiven service, in agiven time interval with a given
             warmup/warmdown time offset and a given step
 
         """
+        if version == None:
+            version = 'latest'
         self.query = 'round(sum(irate(istio_requests_total{destination_service=~"' + self.service + '' \
-                '.' + self.namespace + '.svc.cluster.local", reporter="source"}[1m])) by (response_code, response_flags), 0.001)'
+                '.' + self.namespace + '.svc.cluster.local", reporter="source", destination_canonical_revision="'+version+'"}[1m])) by (response_code, response_flags), 0.001)'
+        result = self.query_prometheus()
+        return result
+    
+    def get_retried_requests(self, port, version=""):
+        """
+            This function gets the number of retried requests for a given service, in given time interval with a given
+            warmup/warmdown time offset and a given step
+        """
+        self.query= 'round(sum(irate(envoy_cluster_upstream_rq_retry{cluster_name="outbound|'+str(port)+'|'+version+'|'+self.service+'.default.svc.cluster.local"}[1m])) by (), 0.001)'
         result = self.query_prometheus()
         return result
 
