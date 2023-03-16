@@ -1,6 +1,7 @@
 import logging.config
 from kubernetes import client
 from kubernetes.client.rest import ApiException
+from functions import push_to_prom_pg
 
 
 def create_virtual_service(virtual_service):
@@ -91,7 +92,22 @@ def create_retry(service_name, retry_attempt, interval, versions=None):
                     }
             routes.append(route)
         vs["spec"]['http'][0]['route']= routes
-    
+    data_for_pg = {
+        "name": "virtual_service_retry_attempts",
+        "description": "Value of attempts applied to Istio as VS",
+        "value": retry_attempt,
+        "job": "retry_mechanism",
+        "label": [service_name, "latest"]
+    }
+    push_to_prom_pg(data_for_pg)
+    data_for_pg = {
+        "name": "virtual_service_retry_interval",
+        "description": "Value of perTryTimeout applied to Istio as VS",
+        "value": interval,
+        "job": "retry_mechanism",
+        "label": [service_name, "latest"]
+    }
+    push_to_prom_pg(data_for_pg)
     create_virtual_service(vs)
 
 
