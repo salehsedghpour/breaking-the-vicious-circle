@@ -77,3 +77,24 @@ class Retry_Controller:
         if int(self.retry_thrsh) >= 2147483646: # max number in int32
             self.retry_thrsh = 2147483646
         return self.retry_thrsh
+    
+    
+class retryControllerTCP:
+    def __init__(self):
+        self.trgt_rsp_time_95 = 100
+        self.cur_rsp_time_95 = 50
+        self.curr_failed = 0
+        self.curr_cb = 0
+        self.retry_attempt = 2
+        self.retry_interval = 25
+        self.max_retry_attmept = self.trgt_rsp_time_95
+
+    def exec(self):
+        self.cwnd = max(1, self.cwnd)
+        not_responded = self.curr_failed + self.curr_cb
+        if self.cur_rsp_time_95 > self.trgt_rsp_time_95 or not_responded > 0:
+            self.retry_attempt = max(int(self.retry_attempt/2), 1)
+        else:
+            self.retry_attempt += 1
+        self.retry_interval = max(int(self.trgt_rsp_time_95/self.retry_attempt),1)
+        return self.retry_attempt, self.retry_interval
