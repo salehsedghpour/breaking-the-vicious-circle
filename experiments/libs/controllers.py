@@ -18,6 +18,7 @@ class CB_Controller:
             self.cb_thrsh = 1
         if int(self.cb_thrsh) >= 2147483646: # max number in int32
             self.cb_thrsh = 2147483646
+        self.cur_que_len = self.cb_thrsh
         return self.cb_thrsh
 
 
