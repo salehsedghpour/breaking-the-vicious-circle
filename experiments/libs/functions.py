@@ -190,3 +190,30 @@ def delete_loadgenerator():
         
         logging.info("Load generator is successfully deleted.")
     yaml_file.close()
+
+
+def deploy_dynamic_loadgenerator(capacity, spikes, duration, spike_duration=5, capacity_duration=45, lg_address="frontend/cart" ):
+    with open(get_project_root()+'/experiments/yaml-files/loadgenerator.yaml', "r") as yaml_file:
+        for_scanior = int(duration / (spike_duration+capacity_duration))       
+        yaml_object = None
+        try:
+            yaml_object = yaml.safe_load(yaml_file)
+            traffic_scenario = """
+                for j in {};
+                    do
+                    setConcurrency {};
+                    sleep {};
+                    setConcurrency {};
+                    sleep {};
+                    done;
+                echo "done";
+                pkill -15 httpmon;
+                """.format("{1.."+str(for_scanior)+"..1}", str(capacity), str(capacity_duration), str(spikes), str(capacity_duration))
+            yaml_object['spec']['template']['spec']['containers'][0]['env'][-1]['value'] = traffic_scenario
+            yaml_object['spec']['template']['spec']['containers'][0]['env'][0]['value'] = lg_address
+            deployment_crud.create_deployment(yaml_object)
+        except yaml.YAMLError as e:
+            logging.warning("There was a problem loading the yaml file in loadgenerator deployment")
+            logging.warning(e)
+        
+    yaml_file.close()  
