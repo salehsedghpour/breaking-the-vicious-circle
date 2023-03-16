@@ -95,7 +95,7 @@ def create_retry(service_name, retry_attempt, interval, versions=None):
     create_virtual_service(vs)
 
 
-def delete_versioned_retry(service_name, retry_attempt, interval, versions):
+def delete_retry(service_name, retry_attempt, interval, versions=None):
     vs = {
         "apiVersion": "networking.istio.io/v1alpha3",
         "kind": "VirtualService",
@@ -109,8 +109,7 @@ def delete_versioned_retry(service_name, retry_attempt, interval, versions):
             ],
             "http": [
                 {
-                    "route": [
-                    ],
+
                     "retries": {
                         "attempts": retry_attempt,
                         "perTryTimeout": interval,
@@ -120,15 +119,26 @@ def delete_versioned_retry(service_name, retry_attempt, interval, versions):
             ]
         }
     }
-    for version in versions:
-        route = {
-                    "destination": {
-                        "host": service_name,
-                        "subset": version
-                    },
-                    "weight": 10
-                }
-        vs["spec"]['http'][0]['route'].append(route)
+
+    if versions != None:
+        routes = []
+        for version in versions:
+            weight = 0
+            if 100/len(versions) % 1 == 0:
+                weight = int(100/len(versions))
+            elif version == versions[-1]:
+                weight = int(100/len(versions)) + 1
+            else:
+                weight = int(100/len(versions))
+            route = {
+                        "destination": {
+                            "host": service_name,
+                            "subset": version
+                        },
+                        "weight": weight
+                    }
+            routes.append(route)
+        vs["spec"]['http'][0]['route']= routes
     delete_virtual_service(vs)
 
 
