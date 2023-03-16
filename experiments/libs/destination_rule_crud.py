@@ -1,6 +1,7 @@
 import logging.config
 from kubernetes import client
 from kubernetes.client.rest import ApiException
+from functions import push_to_prom_pg
 
 
 def create_circuit_breaker(service_name, name_space, max_requests):
@@ -32,6 +33,14 @@ def create_circuit_breaker(service_name, name_space, max_requests):
             version="v1alpha3",
             plural="destinationrules"
         )
+        data_for_pg = {
+            "name": "destination_rule_http2_max_requests",
+            "description": "Value of http2MaxRequest applied to Istio as DR",
+            "value": max_requests,
+            "job": "circuit_breaker",
+            "label": [service_name, "latest"]
+        }
+        push_to_prom_pg(data_for_pg)
         logging.info("Circuit breaker for service %s with value of %s is successfully created. " % (str(service_name), str(max_requests)))
         return True
     except ApiException as e:
@@ -76,6 +85,15 @@ def create_circuit_breaker_for_specific_version(service_name, service_version, m
             version="v1alpha3",
             plural="destinationrules"
         )
+        data_for_pg = {
+            "name": "destination_rule_http2_max_requests",
+            "description": "Value of http2MaxRequest applied to Istio as DR",
+            "value": max_requests,
+            "job": "circuit_breaker",
+            "label": [service_name, service_version]
+        }
+        push_to_prom_pg(data_for_pg)
+
         logging.info("Circuit breaker for service %s with value of %s is successfully created. " % (str(service_name), str(max_requests)))
         return True
     except ApiException as e:
