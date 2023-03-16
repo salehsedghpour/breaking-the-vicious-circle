@@ -47,7 +47,7 @@ def delete_virtual_service(virtual_service):
         return False
 
 
-def create_versioned_retry(service_name, retry_attempt, interval, versions):
+def create_retry(service_name, retry_attempt, interval, versions=None):
     vs = {
         "apiVersion": "networking.istio.io/v1alpha3",
         "kind": "VirtualService",
@@ -61,8 +61,7 @@ def create_versioned_retry(service_name, retry_attempt, interval, versions):
             ],
             "http": [
                 {
-                    "route": [
-                    ],
+
                     "retries": {
                         "attempts": retry_attempt,
                         "perTryTimeout": interval,
@@ -73,23 +72,26 @@ def create_versioned_retry(service_name, retry_attempt, interval, versions):
         }
     }
 
-
-    for version in versions:
-        weight = 0
-        if 100/len(versions) % 1 == 0:
-            weight = int(100/len(versions))
-        elif version == versions[-1]:
-            weight = int(100/len(versions)) + 1
-        else:
-            weight = int(100/len(versions))
-        route = {
-                    "destination": {
-                        "host": service_name,
-                        "subset": version
-                    },
-                    "weight": weight
-                }
-        vs["spec"]['http'][0]['route'].append(route)
+    if versions != None:
+        routes = []
+        for version in versions:
+            weight = 0
+            if 100/len(versions) % 1 == 0:
+                weight = int(100/len(versions))
+            elif version == versions[-1]:
+                weight = int(100/len(versions)) + 1
+            else:
+                weight = int(100/len(versions))
+            route = {
+                        "destination": {
+                            "host": service_name,
+                            "subset": version
+                        },
+                        "weight": weight
+                    }
+            routes.append(route)
+        vs["spec"]['http'][0]['route']= routes
+    
     create_virtual_service(vs)
 
 
