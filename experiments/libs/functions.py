@@ -144,9 +144,9 @@ def push_to_prom_pg(data):
     pg_port = "30091"
     pg_address = "http://" + address + ":" + pg_port + "/"
 
-    g = Gauge(data['name'], data['description'],labelnames=['service_name', 'service_version'], registry=registry)
+    g = Gauge(data['name']+"_"+data['service_name'].replace("-","_")+"_"+ data['service_version'], data['description'], registry=registry)
     g.set(data['value'])
-    g.labels(data['service_name'], data['service_version'])
+    # g.labels([data['service_name'], data['service_version']])
     push_to_gateway(pg_address, job=data['job'], registry=registry)
 
     logging.info("The value {} successfully pushed to pushgateway for {}".format(str(data['value']), data['name']))
