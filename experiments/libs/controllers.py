@@ -1,3 +1,4 @@
+import math
 class CB_Controller:
     def __init__(self):
         self.p = 0.95
@@ -9,6 +10,8 @@ class CB_Controller:
         self.cb_thrsh = 1024
 
     def exec(self):
+        if math.isnan(self.cur_rsp_time_95):
+            self.cur_rsp_time_95 = 0
         self.not_smth_alpha = (self.cur_rsp_time_95/max(self.cur_que_len, 1))
         self.smth_alpha = (self.p * self.smth_alpha) + (1-self.p) * self.not_smth_alpha
         self.cb_thrsh = int(self.trgt_rsp_time_95 / self.smth_alpha)
@@ -91,11 +94,17 @@ class retryControllerTCP:
         self.max_retry_attmept = self.trgt_rsp_time_95
 
     def exec(self):
-        self.cwnd = max(1, self.cwnd)
+        if math.isnan(self.cur_rsp_time_95):
+            self.cur_rsp_time_95 = 0
+        if math.isnan(self.curr_failed):
+            self.curr_failed = 0
+        if math.isnan(self.curr_cb):
+            self.curr_cb = 0
         not_responded = self.curr_failed + self.curr_cb
         if self.cur_rsp_time_95 > self.trgt_rsp_time_95 or not_responded > 0:
             self.retry_attempt = max(int(self.retry_attempt/2), 1)
         else:
             self.retry_attempt += 1
         self.retry_interval = max(int(self.trgt_rsp_time_95/self.retry_attempt),1)
+        self.retry_interval = str(self.retry_interval)+"ms"
         return self.retry_attempt, self.retry_interval
