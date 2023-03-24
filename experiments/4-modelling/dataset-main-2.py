@@ -66,8 +66,8 @@ main_data = {
     "f_fail_req": [],
     "f_cb_req": [],
     "f_c_rt": [],
+    "pc_retried_req": []
 }
-
 
 
 
@@ -108,7 +108,6 @@ def extract_interval(name_string):
 
 
 for log_file in log_file_names:
-    
     df = pd.read_csv(log_file)
     for index, row in df.iterrows():
         prom_inst = prom_client.PromQuery()
@@ -120,9 +119,10 @@ for log_file in log_file_names:
         prom_inst.percentile = "0.95"
         prom_inst.warmup = 90000
         prom_inst.warmdown = 90000
-
         prom_inst.service = services[0] # productcatalogue
+        pc_retry = clean_prom_rt(prom_inst.get_retried_requests(port="3550"))
         pc_succ_req, pc_fail_req, pc_cb_req = clean_prom_status_codes(prom_inst.get_status_codes())
+
         pc_rt = clean_prom_rt(prom_inst.get_response_time())
         prom_inst.service = services[1] # productcatalogue
         f_succ_req, f_fail_req, f_cb_req = clean_prom_status_codes(prom_inst.get_status_codes())
@@ -133,10 +133,11 @@ for log_file in log_file_names:
             "pc_fail_req": pc_fail_req,
             "pc_cb_req": pc_cb_req,
             "pc_rt": pc_rt,
+            "pc_retry": pc_retry,
             "f_succ_req": f_succ_req,
             "f_fail_req": f_fail_req,
             "f_cb_req": f_cb_req,
-            "f_rt": f_rt
+            "f_rt": f_rt,
         }
         # print(not_aligned_dict)
         if row['cb'] == 'none':
@@ -166,6 +167,7 @@ for log_file in log_file_names:
         main_data['f_fail_req'].extend(aligned_dict['f_fail_req']['data'])
         main_data['f_cb_req'].extend(aligned_dict['f_cb_req']['data'])
         main_data['f_c_rt'].extend(aligned_dict['f_rt']['data'])
+        main_data['pc_retried_req'].extend(aligned_dict['pc_retry']['data'])
         
 
         
@@ -173,7 +175,7 @@ for log_file in log_file_names:
 main_df = pd.DataFrame(main_data)
 
 
-main_df.to_csv("./datasets/exp4-main-2.csv", index=False)
+main_df.to_csv("./datasets/exp4-main-2_retry.csv", index=False)
 
             
         
