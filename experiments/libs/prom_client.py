@@ -52,11 +52,17 @@ class PromQuery:
                 self.percentile) + ', sum(irate(istio_request_duration_milliseconds_bucket{reporter="'+ self.reporter +\
                 '", destination_service=~"' + self.service + '.' + self.namespace + '.svc.cluster.local", destination_canonical_revision="'+version+'"}[1m])) ' \
                 'by (le)) / 1000)'
-        else:
+        elif self.response_code == "200":
             self.query = '(histogram_quantile(' + str(
                 self.percentile) + ', sum(irate(istio_request_duration_milliseconds_bucket{reporter="' + self.reporter + \
                  '", destination_service=~"' + self.service + '.' + self.namespace + '.svc.cluster.local",' \
                  'response_code="'+ self.response_code +'", destination_canonical_revision="'+version+'"}[1m])) by (le)) / 1000)'
+        else:
+            self.query = '(histogram_quantile(' + str(
+                self.percentile) + ', sum(irate(istio_request_duration_milliseconds_bucket{reporter="' + self.reporter + \
+                 '", destination_service=~"' + self.service + '.' + self.namespace + '.svc.cluster.local",' \
+                 'response_code!="200", destination_canonical_revision="'+version+'"}[1m])) by (le)) / 1000)'
+            
         result = self.query_prometheus()
         return result
 
