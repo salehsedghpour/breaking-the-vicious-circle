@@ -3,8 +3,8 @@ from experiments.libs import functions, prom_client
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-df = pd.read_csv(functions.get_project_root()+'/logs/exp-7-1-main-3-ver.csv')
-data = df.loc[(df['traffic'] == 40)]
+df = pd.read_csv(functions.get_project_root()+'/logs/exp-8-1-controller-exec-dynamic.csv')
+data = df
 
 """
         retry mechanism         cb
@@ -27,7 +27,7 @@ for index, row in data.iterrows():
         prom_inst.response_code = "200"
         prom_inst.namespace = "default"
         prom_inst.percentile = "0.95"
-        prom_inst.warmup = 0
+        prom_inst.warmup = 60000
         prom_inst.warmdown = 0
         prom_inst.service = service
         status_code_prom_data = prom_inst.get_status_codes()

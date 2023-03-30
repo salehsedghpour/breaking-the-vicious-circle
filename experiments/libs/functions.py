@@ -142,7 +142,7 @@ def push_to_prom_pg(data):
     registry = CollectorRegistry()
     address = 'labumu.se'
     pg_port = "30091"
-    pg_address = "http://" + address + ":" + pg_port + "/"
+    pg_address = "http://" + address + ":" + pg_port 
 
     g = Gauge(data['name']+"_"+data['service_name'].replace("-","_")+"_"+ data['service_version'], data['description'], registry=registry)
     g.set(data['value'])

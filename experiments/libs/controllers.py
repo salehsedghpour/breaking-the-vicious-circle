@@ -92,6 +92,7 @@ class retryControllerTCP:
         self.retry_attempt = 2
         self.retry_interval = 25
         self.max_retry_attmept = self.trgt_rsp_time_95
+        self.old_not_responded = 0
 
     def exec(self):
         if math.isnan(self.cur_rsp_time_95):
@@ -102,9 +103,11 @@ class retryControllerTCP:
             self.curr_cb = 0
         not_responded = self.curr_failed + self.curr_cb
         if self.cur_rsp_time_95 > self.trgt_rsp_time_95 or not_responded > 0:
-            self.retry_attempt = max(int(self.retry_attempt/2), 1)
+            self.retry_attempt = max(int(self.retry_attempt/max(not_responded/max(self.old_not_responded, 1), 2)), 1)
+            # self.retry_attempt = max(int(self.retry_attempt/2), 1)
         else:
             self.retry_attempt += 1
         self.retry_interval = max(int(self.trgt_rsp_time_95/self.retry_attempt),1)
         self.retry_interval = str(self.retry_interval)+"ms"
+        self.old_not_responded = not_responded
         return self.retry_attempt, self.retry_interval

@@ -22,6 +22,7 @@ def initialize_retry_controller(service_list):
     for service in service_list:
         # initialize retry controller
         retry_controllers[service+'-retry'] = controllers.retryControllerTCP()
+        retry_controllers[service+'-retry'].trgt_rsp_time_95 = 100
     return retry_controllers
 
 
