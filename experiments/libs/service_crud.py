@@ -10,7 +10,12 @@ def create_service(service):
     """
     try:
         api = client.CoreV1Api()
-        resp = api.create_namespaced_service(body=service, namespace=service['metadata']['namespace'])
+        namespace = ''
+        if 'namespace' in service['metadata']:
+            namespace = service['metadata']['namespace']
+        else:
+            namespace = 'default'
+        resp = api.create_namespaced_service(body=service, namespace=namespace)
 
         logging.info("Service {} is successfully created. \n"
                      "\t Name \t\t Namespace\n"
@@ -33,7 +38,12 @@ def update_service(service):
     """
     try:
         api = client.CoreV1Api()
-        resp = api.patch_namespaced_service(body=service, namespace=service['metadata']['namespace'],
+        namespace = ''
+        if 'namespace' in service['metadata']:
+            namespace = service['metadata']['namespace']
+        else:
+            namespace = 'default'
+        resp = api.patch_namespaced_service(body=service, namespace=namespace,
                                                name=service['metadata']['name'])
 
         logging.info("Service {} is successfully updated. \n"
@@ -57,7 +67,12 @@ def delete_service(service):
     """
     try:
         api = client.CoreV1Api()
-        api.delete_namespaced_service(namespace=service['metadata']['namespace'],
+        namespace = ''
+        if 'namespace' in service['metadata']:
+            namespace = service['metadata']['namespace']
+        else:
+            namespace = 'default'
+        api.delete_namespaced_service(namespace=namespace,
                                                name=service['metadata']['name'])
 
         logging.info("Service {} is successfully deleted.".format(service['metadata']['name']))
