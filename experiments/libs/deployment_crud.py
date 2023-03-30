@@ -10,7 +10,12 @@ def create_deployment(deployment):
     """
     try:
         api = client.AppsV1Api()
-        resp = api.create_namespaced_deployment(body=deployment, namespace=deployment['metadata']['namespace'])
+        namespace = ''
+        if 'namespace' in deployment['metadata']:
+            namespace = deployment['metadata']['namespace']
+        else:
+            namespace = 'default'
+        resp = api.create_namespaced_deployment(body=deployment, namespace=namespace)
 
         logging.info("Deployment {} is successfully created. \n"
                      "\t Name \t\t Namespace \t Image \n"
@@ -34,7 +39,12 @@ def update_deployment(deployment):
     """
     try:
         api = client.AppsV1Api()
-        resp = api.patch_namespaced_deployment(body=deployment, namespace=deployment['metadata']['namespace'],
+        namespace = ''
+        if 'namespace' in deployment['metadata']:
+            namespace = deployment['metadata']['namespace']
+        else:
+            namespace = 'default'
+        resp = api.patch_namespaced_deployment(body=deployment, namespace=namespace,
                                                name=deployment['metadata']['name'])
 
         logging.info("Deployment {} is successfully updated. \n"
@@ -59,7 +69,12 @@ def delete_deployment(deployment):
     """
     try:
         api = client.AppsV1Api()
-        api.delete_namespaced_deployment(namespace=deployment['metadata']['namespace'],
+        namespace = ''
+        if 'namespace' in deployment['metadata']:
+            namespace = deployment['metadata']['namespace']
+        else:
+            namespace = 'default'
+        api.delete_namespaced_deployment(namespace=namespace,
                                                name=deployment['metadata']['name'])
 
         logging.info("Deployment {} is successfully deleted.".format(deployment['metadata']['name']))
