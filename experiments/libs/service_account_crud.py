@@ -10,7 +10,12 @@ def create_service_account(service_account):
     """
     try:
         api = client.CoreV1Api()
-        resp = api.create_namespaced_service_account(body=service_account, namespace=service_account['metadata']['namespace'])
+        namespace = ''
+        if 'namespace' in service_account['metadata']:
+            namespace = service_account['metadata']['namespace']
+        else:
+            namespace = 'default'
+        resp = api.create_namespaced_service_account(body=service_account, namespace=namespace)
 
         logging.info("Service Account {} is successfully created. \n"
                      "\t Name \t\t Namespace\n"
@@ -33,7 +38,12 @@ def update_service_account(service_account):
     """
     try:
         api = client.CoreV1Api()
-        resp = api.patch_namespaced_service_account(body=service_account, namespace=service_account['metadata']['namespace'],
+        namespace = ''
+        if 'namespace' in service_account['metadata']:
+            namespace = service_account['metadata']['namespace']
+        else:
+            namespace = 'default'
+        resp = api.patch_namespaced_service_account(body=service_account, namespace=namespace,
                                                name=service_account['metadata']['name'])
 
         logging.info("Service Account {} is successfully updated. \n"
@@ -57,7 +67,12 @@ def delete_service_account(service_account):
     """
     try:
         api = client.CoreV1Api()
-        api.delete_namespaced_service_account(namespace=service_account['metadata']['namespace'],
+        namespace = ''
+        if 'namespace' in service_account['metadata']:
+            namespace = service_account['metadata']['namespace']
+        else:
+            namespace = 'default'
+        api.delete_namespaced_service_account(namespace=namespace,
                                                name=service_account['metadata']['name'])
 
         logging.info("Service Account {} is successfully deleted.".format(service_account['metadata']['name']))
