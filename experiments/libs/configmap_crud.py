@@ -9,8 +9,13 @@ def create_configmap(configmap):
     :return:
     """
     try:
+        namespace = ''
+        if 'namespace' in configmap['metadata']:
+            namespace = configmap['metadata']['namespace']
+        else:
+            namespace = 'default'
         api = client.CoreV1Api()
-        resp = api.create_namespaced_config_map(body=configmap, namespace=configmap['metadata']['namespace'])
+        resp = api.create_namespaced_config_map(body=configmap, namespace=namespace)
 
         logging.info("Configmap {} is successfully created. \n"
                      "\t Name \t\t Namespace\n"
@@ -33,7 +38,12 @@ def update_configmap(configmap):
     """
     try:
         api = client.CoreV1Api()
-        resp = api.patch_namespaced_config_map(body=configmap, namespace=configmap['metadata']['namespace'],
+        namespace = ''
+        if 'namespace' in configmap['metadata']:
+            namespace = configmap['metadata']['namespace']
+        else:
+            namespace = 'default'
+        resp = api.patch_namespaced_config_map(body=configmap, namespace=namespace,
                                                name=configmap['metadata']['name'])
 
         logging.info("Configmap {} is successfully updated. \n"
@@ -57,7 +67,12 @@ def delete_configmap(configmap):
     """
     try:
         api = client.CoreV1Api()
-        api.delete_namespaced_config_map(namespace=configmap['metadata']['namespace'],
+        namespace = ''
+        if 'namespace' in configmap['metadata']:
+            namespace = configmap['metadata']['namespace']
+        else:
+            namespace = 'default'
+        api.delete_namespaced_config_map(namespace=namespace,
                                                name=configmap['metadata']['name'])
 
         logging.info("Configmap {} is successfully deleted.".format(configmap['metadata']['name']))
