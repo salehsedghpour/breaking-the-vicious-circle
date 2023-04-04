@@ -154,7 +154,6 @@ def push_to_prom_pg(data):
 
 def deploy_static_loadgenerator(load_lower_bound, load_upper_bound, sleep_time=300, lg_address="frontend/cart" ):
     with open(get_project_root()+'/experiments/yaml-files/loadgenerator.yaml', "r") as yaml_file:
-        lg_address = "frontend/cart"
         yaml_object = None
         try:
             yaml_object = yaml.safe_load(yaml_file)
